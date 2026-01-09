@@ -1,0 +1,45 @@
+package:
+  name: cfDNA_deconv
+  version: "0.1.0"
+
+source:
+  path: ../  # Path to root of the package (adjust if building from GitHub)
+
+build:
+  number: 0
+  noarch: python    # Critical: Marks package as pure Python (no binaries)
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv"
+  entry_points:
+    - cfDNA_deconv = cfDNA_deconv.cli:cli
+
+requirements:
+  host:
+    - python >=3.8,<3.12
+    - pip
+    - setuptools
+  run:
+    - python >=3.8,<3.12
+    - click >=8.0,<9.0
+    - pandas >=1.4,<2.0
+    - numpy >=1.21,<1.25
+    - samtools >=1.15,<1.18
+    - bedtools >=2.30,<2.32
+    - bc  # For bash math operations (preserved in subprocess calls)
+    #- rlm  # Install from GitHub (add as a pip dependency or manual step)
+    #- mbtools  # Install from GitHub (add as a pip dependency or manual step)
+
+test:
+  commands:
+    - cfDNA_deconv --help
+    - cfDNA_deconv short-read --help
+    - cfDNA_deconv nanopore --help
+
+about:
+  home: https://github.com/jasonwong-lab/cfDNA_deconv
+  license: MIT
+  summary: Deconvolute cfDNA composition from methylation data (short-read/Nanopore)
+  description: |
+    A Python package wrapping the original bash script for cfDNA methylation deconvolution.
+    Supports short-read and Nanopore sequencing data, outputting ReadsRatio (both)
+    and RPKM (short-read only).
+  dev_url: https://github.com/jasonwong-lab/cfDNA_deconv
