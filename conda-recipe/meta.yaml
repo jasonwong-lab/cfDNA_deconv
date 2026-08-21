@@ -1,6 +1,6 @@
 package:
   name: cfDNA_deconv
-  version: "0.1.0"
+  version: "1.0.0"
 
 source:
   path: ../  # Path to root of the package (adjust if building from GitHub)
@@ -41,5 +41,5 @@ about:
   description: |
     A Python package wrapping the original bash script for cfDNA methylation deconvolution.
     Supports short-read and Nanopore sequencing data, outputting ReadsRatio (both)
-    and RPKM (short-read only).
+    and RPKM for both sequencing modes.
   dev_url: https://github.com/jasonwong-lab/cfDNA_deconv

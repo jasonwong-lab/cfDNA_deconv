@@ -1,0 +1,2 @@
+[console_scripts]
+cfDNA_deconv = cfDNA_deconv.cli:cli

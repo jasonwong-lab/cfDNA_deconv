@@ -2,7 +2,7 @@
 cfDNA_deconv: A Python package for deconvoluting cfDNA composition from methylation data
 Supports short-read and Nanopore sequencing data.
 """
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "Qiuyu Jing"
 
 from .cli import cli

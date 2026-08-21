@@ -4,6 +4,38 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_MARKER_SETS = (
+    "U25_36celltype",
+    "U25_40celltype",
+    "U250_36celltype",
+    "U250_40celltype",
+)
+
+
+def resolve_marker_dir(marker_dir: str, genome: str, marker_set: str) -> Path:
+    """Resolve a selected marker set or a legacy direct marker directory."""
+    marker_dir = Path(marker_dir)
+    candidates = (
+        marker_dir / genome / f"{marker_set}_marker",
+        marker_dir / f"{marker_set}_marker",
+    )
+    for resolved in candidates:
+        if (resolved / "ReferenceList.txt").exists():
+            return resolved
+
+    if (marker_dir / "ReferenceList.txt").exists():
+        return marker_dir
+
+    raise FileNotFoundError(
+        f"No ReferenceList.txt found in {marker_dir} or its {genome} marker set"
+    )
+
+
+def marker_bed(marker_dir: Path, cell_type: str, genome: str, marker_set: str) -> Path:
+    """Return the BED file for a cell type in a selected marker set."""
+    marker_size = marker_set.split("_", 1)[0]
+    return marker_dir / f"{marker_size}_{genome}_{cell_type}.bed"
+
 def run_command(cmd, description: str, stdout=None, stderr=subprocess.PIPE):
     """
     Run a shell command with error handling and logging.

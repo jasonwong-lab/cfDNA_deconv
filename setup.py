@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="cfDNA_deconv",
-    version="0.1.0",
+    version="1.0.0",
     author="Qiuyu Jing",
     author_email="qiuyu.jing@coinno.hk",
     description="Deconvolute cfDNA composition from methylation data (short-read/Nanopore)",

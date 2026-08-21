@@ -2,7 +2,7 @@ import os
 import subprocess
 import logging
 from pathlib import Path
-from cfDNA_deconv.utils import run_command, validate_inputs
+from cfDNA_deconv.utils import marker_bed, resolve_marker_dir, run_command, validate_inputs
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,9 @@ def deconvolute_short_read(
     output_dir: str,
     mode: str = "PE",
     aligner: str = "bismark",
-    cores: int = 4
+    cores: int = 4,
+    genome: str = "hg19",
+    marker_set: str = "U250_36celltype"
 ):
     """
     Deconvolute cfDNA composition from short-read sequencing data (BAM file)
@@ -21,16 +23,18 @@ def deconvolute_short_read(
     
     Args:
         marker_dir: Path to folder with .bed markers and ReferenceList.txt
-        ref_dir: Path to folder with hg19.fa reference
+        ref_dir: Path to folder with the selected genome FASTA
         bam_file: Path to sorted/indexed BAM file
         output_dir: Output directory for results
         mode: Sequencing mode (PE/SE), default=PE
         aligner: Aligner used (bsmap/bismark/segemehl/gem), default=bismark
         cores: Number of threads, default=4
+        genome: Reference genome build (hg19/hg38)
+        marker_set: Marker set name (for example, U250_36celltype)
     """
     # Validate inputs
     validate_inputs([marker_dir, ref_dir, bam_file], ["dir", "dir", "file"])
-    marker_dir = Path(marker_dir)
+    marker_dir = resolve_marker_dir(marker_dir, genome, marker_set)
     ref_dir = Path(ref_dir)
     bam_file = Path(bam_file)
     output_dir = Path(output_dir)
@@ -59,7 +63,7 @@ def deconvolute_short_read(
             cell_type = line.strip()
             if not cell_type:
                 continue
-            bed_file = marker_dir / f"U250_hg19_{cell_type}.bed"
+            bed_file = marker_bed(marker_dir, cell_type, genome, marker_set)
             if not bed_file.exists():
                 logger.warning(f"Marker bed file missing: {bed_file}")
                 continue
@@ -81,7 +85,7 @@ def deconvolute_short_read(
         bed_output = region_bed_dir / f"{bam.stem}.bed"
         cmd = [
             "RLM", "-b", str(bam),
-            "-r", str(ref_dir / "hg19.fa"),
+            "-r", str(ref_dir / f"{genome}.fa"),
             "-m", mode, "-s", "all",
             "-a", aligner, "-o", str(bed_output)
         ]
@@ -103,8 +107,8 @@ def deconvolute_short_read(
                 continue
             
             # Calculate count/total with awk (wrap in bash for pipeline)
-            count_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($NF<=0.25) print $0}}' | wc -l"""
-            total_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | wc -l"""
+            count_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($6>=3 &&$NF<=0.25) print $0}}' | wc -l"""
+            total_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($6>=3) print $0}}' | wc -l"""
             
             count = int(subprocess.check_output(count_cmd, shell=True).strip())
             total = int(subprocess.check_output(total_cmd, shell=True).strip())
@@ -121,20 +125,24 @@ def deconvolute_short_read(
                 continue
             
             bed_files = list(region_bed_dir.glob(f"{sample_name}*{cell_type}*.bed"))
-            marker_bed = marker_dir / f"U250_hg19_{cell_type}.bed"
+            marker_bed_file = marker_bed(marker_dir, cell_type, genome, marker_set)
             
-            if not bed_files or not marker_bed.exists():
+            if not bed_files or not marker_bed_file.exists():
                 logger.warning(f"Missing files for RPKM calculation: {cell_type}")
                 out_f.write(f"{cell_type}\t0.000000\n")
                 continue
             
             # Calculate region length
-            len_cmd = f"""awk '{{$4=$3-$2; print $0}}' {marker_bed} | awk '{{sum+=$4}} END{{print sum}}'"""
-            region_len = int(subprocess.check_output(len_cmd, shell=True).strip())
+            region_len = 0
+            with open(marker_bed_file, "r") as marker_handle:
+                for marker_line in marker_handle:
+                    fields = marker_line.rstrip("\n").split("\t")
+                    if len(fields) >= 3:
+                        region_len += int(fields[2]) - int(fields[1])
             
             # Calculate count/total
-            count_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($NF<=0.25) print $0}}' | wc -l"""
-            total_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | wc -l"""
+            count_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($6>=3 && $NF<=0.25) print $0}}' | wc -l"""
+            total_cmd = f"""sed '1d' {" ".join(str(b) for b in bed_files)} | awk '{{if($6>=3) print $0}}' | wc -l"""
             
             count = int(subprocess.check_output(count_cmd, shell=True).strip())
             total = int(subprocess.check_output(total_cmd, shell=True).strip())
