@@ -99,6 +99,11 @@ Supported marker sets are `U25_36celltype`, `U25_40celltype`,
 contain the matching FASTA file, such as `hg19.fa` or `hg38.fa`. Please note that `U250_36celltype`
 marker set is not available for hg38 reference as it's not provided by the original publication.
 
+Due to the file size limitation, reference sequences in .fasta format is not deposited in Github 
+repository. Please specify your own fasta reference using command `--ref-dir`. This fasta file should 
+be the one you used for mapping and align with all the marker regions used.
+
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
