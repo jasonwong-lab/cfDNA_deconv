@@ -36,7 +36,7 @@ test:
 
 about:
   home: https://github.com/jasonwong-lab/cfDNA_deconv
-  license: MIT
+  license: GPL-3.0-or-later
   summary: Deconvolute cfDNA composition from methylation data (short-read/Nanopore)
   description: |
     A Python package wrapping the original bash script for cfDNA methylation deconvolution.
